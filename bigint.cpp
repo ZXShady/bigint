@@ -540,7 +540,7 @@ bigint bigint::pow10(unsigned long long exponent)
         return bigint{ 1 };
     bigint ret;
     ret.mNumbers.resize(exponent / kDigitCountOfMax + 1);
-    ret.mNumbers[exponent / kDigitCountOfMax] = math::pow10(exponent % kDigitCountOfMax);
+    ret.mNumbers[exponent / kDigitCountOfMax] = static_cast<number_type>(math::pow10(exponent % kDigitCountOfMax));
     return ret;
 }
 
