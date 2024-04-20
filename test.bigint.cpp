@@ -2,7 +2,7 @@
 // https://github.com/rgroshanrg/bigint/tree/main
 
 
-#include "bigint.hpp"
+#include "single_header_bigint.hpp"
 #include <climits>
 #include <cmath>        // to check for conflicts
 #include <cstdlib>      // for abs of integer types
