@@ -337,7 +337,7 @@ public:
     }
 
     template<class T>
-    T to() const
+    ZXSHADY_NODISCARD T to() const
     {
         static_assert(std::is_integral<T>::value, "T in zxshady::bigint::to<T>() must be an integral type.");
 
@@ -358,7 +358,7 @@ public:
     }
 
     template<class T>
-    result<T> non_throwing_to() const noexcept
+    ZXSHADY_NODISCARD result<T> non_throwing_to() const noexcept
     {
         static_assert(std::is_integral<T>::value, "T in zxshady::bigint::to<T>() must be an integral type.");
 
