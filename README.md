@@ -45,7 +45,9 @@ bigint l{0} // is slower than two above
 6. Increment
 7. Decrement
 8. !
-9. bool
+9. bool 
+10. Unary Plus 
+11. Unary Minus 
 ```c++
 zxshady::bigint a= 12,b = 941830318,c{"10984019384143130598013958"};
 
@@ -65,6 +67,9 @@ c/= 0; // throws std::invalid_arguement
 c%= 0;// same as above;
 if(!c && !a && b) goto hell;// operator bool to check for non-zero and operator! to check for zero
 // it is faster than using c == 0 and b != 0
+a = -b; // unary minus returns a copy and flips its sign;
+a = +b; // DOES NOT DO abs(b) it just returns a copy...
+
 ```
 ---
 # Member Functions
