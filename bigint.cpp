@@ -45,7 +45,6 @@ bigint::bigint(const char* begin,const char* end)
     if (mNumbers.empty())
         *this = bigint();
 }
-
 bigint zxshady::sqrt(const bigint& x)
 {
     if (x.is_negative())
@@ -82,7 +81,6 @@ start:
     goto start;
     return x0;
 }
-
 bool bigint::is_pow_of_10() const noexcept
 {
     const auto end = mNumbers.cend() - 1;
@@ -108,7 +106,6 @@ bool bigint::is_pow_of_10() const noexcept
     return false;
 
 }
-
 bool bigint::is_pow_of_2() const noexcept
 {
     if (!*this) // == 0
@@ -174,8 +171,6 @@ std::string bigint::to_string() const
     }
     return ret;
 }
-
-
 bigint bigint::add(const bigint& a, const bigint& b, bool a_negative, bool b_negative) {
     
     if (!a_negative && b_negative) {
@@ -218,7 +213,6 @@ bigint bigint::add(const bigint& a, const bigint& b, bool a_negative, bool b_neg
     ret.fix();
     return ret;
 }
-
 bigint bigint::sub(const bigint& a, const bigint& b, bool a_negative, bool b_negative)
 {
     if (!a_negative && b_negative) {
@@ -285,7 +279,6 @@ bigint bigint::sub(const bigint& a, const bigint& b, bool a_negative, bool b_neg
     ret.fix();
     return ret;
 }
-
 bigint bigint::mul(const bigint& a, const bigint& b, bool a_negative, bool b_negative) 
 {
     if (!a || !b) // using operator! to test for == 0 since it is hardcoded it will be faster!
@@ -315,7 +308,6 @@ bigint bigint::mul(const bigint& a, const bigint& b, bool a_negative, bool b_neg
     
     return ret;
 }
-
 bigint bigint::div(const bigint& a, const bigint& b, bool a_negative, bool b_negative)
 {
     if (!b)
@@ -352,7 +344,6 @@ bigint bigint::div(const bigint& a, const bigint& b, bool a_negative, bool b_neg
     ret.fix();
     return ret;
 }
-
 bool bigint::lt(const bigint& a, const bigint& b,bool a_negative,bool b_negative) noexcept
 {
     // if not same sign...
@@ -379,7 +370,6 @@ bool bigint::lt(const bigint& a, const bigint& b,bool a_negative,bool b_negative
     
     return false;
 }
-
 bigint& bigint::half() & noexcept
 {
     if (this->is_positive() && *this <= 2) {
@@ -421,7 +411,6 @@ bigint& bigint::half() & noexcept
     this->fix();
     return *this;
 }
-
 bigint bigint::rand(std::size_t num_digits /* = 1000 */)
 {
     if(num_digits == 0)
@@ -460,7 +449,6 @@ bigint bigint::rand(std::size_t num_digits /* = 1000 */)
     assert(ret.digit_count() == num_digits);
     return ret;
 }
-
 unsigned long long zxshady::log2(bigint x)
 {
     if(!x)
@@ -477,7 +465,6 @@ unsigned long long zxshady::log2(bigint x)
     return ret - 1;
 
 }
-
 unsigned long long zxshady::log10(const bigint& x)
 {
     if(!x)
@@ -487,8 +474,6 @@ unsigned long long zxshady::log10(const bigint& x)
 
     return x.digit_count() - 1;
 }
-
-
 unsigned long long zxshady::log(const bigint& x,unsigned long long base )
 {
     if(!x)
@@ -503,8 +488,6 @@ unsigned long long zxshady::log(const bigint& x,unsigned long long base )
 
     return static_cast<unsigned long long>(static_cast<double>(log10(x)) / std::log10(base));
 }
-
-
 bigint zxshady::pow(bigint base, unsigned long long exponent)
 {
     if (!base)
@@ -533,7 +516,6 @@ bigint zxshady::pow(bigint base, unsigned long long exponent)
     base.set_sign(was_negative);
     return base;
 }
-
 bigint bigint::pow10(unsigned long long exponent)
 {
     if (exponent == 0)
@@ -543,7 +525,6 @@ bigint bigint::pow10(unsigned long long exponent)
     ret.mNumbers[exponent / kDigitCountOfMax] = static_cast<number_type>(math::pow10(exponent % kDigitCountOfMax));
     return ret;
 }
-
 bool zxshady::bigint::is_prime() const noexcept
 {
     if (*this == (unsigned char)2)
@@ -560,7 +541,6 @@ bool zxshady::bigint::is_prime() const noexcept
             return false;
     return true;
 }
-
 bigint zxshady::gcd(bigint a, bigint b)
 {
     if (!b) // using operator! for == 0 becuase it is faster since it is hardcoded!
@@ -579,7 +559,6 @@ bigint zxshady::gcd(bigint a, bigint b)
     }
     return a;
 }
-
 bigint zxshady::lcm(const bigint& a, const bigint& b)
 {
     if (!a || !b ) // using negation operator! to check for == 0 since it is hardcoded it is faster!
@@ -591,7 +570,6 @@ std::ostream& zxshady::operator<<(std::ostream& ostream, const zxshady::bigint& 
 {
     return ostream << bigint.to_string();
 }
-
 std::istream& zxshady::operator>>(std::istream& istream, zxshady::bigint& bigint)
 {
     std::string s;
