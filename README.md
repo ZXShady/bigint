@@ -93,7 +93,7 @@ a = +b; // DOES NOT DO abs(b) it just returns a copy...
 15. std::size_t bit_count();
 16. int compare(const bigint& that) const noexcept // a memcpy like function
 // returns
-// a number *< 0* if *this < 0
+// a number *< 0* if *this < that
 // a *0* if *this == that    
 // a number *> 0* if *this > that
 
