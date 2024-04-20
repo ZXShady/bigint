@@ -463,7 +463,7 @@ public:
             return false;
 
         if (a.digit_count() != zxshady::math::digit_count(b))
-            return false
+            return false;
 
         b = math::abs(b);
         
