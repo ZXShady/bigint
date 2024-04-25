@@ -582,12 +582,13 @@ public:
         return !(a > b);
     }
 
-    bigint& operator++()&
+    bigint& operator++() &
     {
         if (is_negative()) {
             mIsNegative = false;
-            --*this;
+            --(*this);
             mIsNegative = true;
+            return *this;
         }
 
         const auto size = mNumbers.size();
@@ -620,7 +621,7 @@ public:
     }
 
 
-    bigint& operator--()&
+    bigint& operator--() &
     {
         if (!*this) {
             mIsNegative = true;
@@ -748,7 +749,17 @@ public: /******* FRIENDS AND STATICS ******/
             return 0;
         return 1;
     }
+    int compare(const bigint& that) noexcept 
+    {
+        auto& a = *this;
+        auto& b = that;
 
+        if (a < b)
+            return -1;
+        if (a == b)
+            return 0;
+        return 1;
+    }
     /// @brief compares using absolute value faster than abs(a).compares(abs(b))
     /// @return -1 if a  <  b
     /// @return  0 if a  == b
