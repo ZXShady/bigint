@@ -32,7 +32,8 @@ bigint h(str.c_str()+3,3) // starts at str.c_str()+3 then reads next 3 character
 // bigint i = nullptr; // error usage of deleted constructor (bigint::bigint(nullptr)= delete)
 bigint j{}; // fastest way to initialize to zero
 bigint k; // fastest way to initialize to zero
-bigint l{0} // is slower than two above
+//bigint l(); // silent error it is a function declaration
+bigint m{0} // is slower than two above
 ```
 ---
 # avaible operators
@@ -90,7 +91,7 @@ a = +b; // DOES NOT DO abs(b) it just returns a copy...
 12. bool is_pow_of_2() const noexcept;
 13. std::string to_string() const;
 14. std::size_t digit_count() const noexcept;
-15. std::size_t bit_count();
+15. std::size_t bit_count() const noexcept;
 16. int compare(const bigint& that) const noexcept // a memcpy like function
 // returns
 // a number *< 0* if *this < that
@@ -128,9 +129,9 @@ bigint sqrt(const bigint& x);
 bigint gcd(bigint a, bigint b); // greatest commmon denomator
 bigint lcm(const bigint& a, const bigint& b);
 
-unsigned long long log2(bigint x);
-unsigned long long log10(const bigint& x);
-unsigned long long log(const bigint& x, unsigned long long base);
+unsigned long long log2(bigint x) noezcept;
+unsigned long long log10(const bigint& x) noexcept;
+unsigned long long log(const bigint& x, unsigned long long base) noexcept;
 
 std::ostream& operator<<(std::ostream& ostream, const bigint& bignum); // output operator
 std::istream& operator>>(std::istream& istream, bigint& bignum); // input operator
