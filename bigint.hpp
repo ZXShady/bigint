@@ -738,7 +738,7 @@ public: /******* FRIENDS AND STATICS ******/
     /// @return  0 if a  == b
     /// @return +1 if a  >  b
     template<class T>
-    int compare(T that) noexcept
+    int compare(T that) const noexcept
     {
         auto& a = *this;
         auto& b = that;
@@ -749,7 +749,7 @@ public: /******* FRIENDS AND STATICS ******/
             return 0;
         return 1;
     }
-    int compare(const bigint& that) noexcept 
+    int compare(const bigint& that) const  noexcept 
     {
         auto& a = *this;
         auto& b = that;
@@ -764,7 +764,7 @@ public: /******* FRIENDS AND STATICS ******/
     /// @return -1 if a  <  b
     /// @return  0 if a  == b
     /// @return +1 if a  >  b
-    int signless_compare(const bigint& that)
+    int signless_compare(const bigint& that) const noexcept
     {
         auto& a = *this;
         auto& b = that;
