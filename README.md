@@ -129,9 +129,9 @@ bigint sqrt(const bigint& x);
 bigint gcd(bigint a, bigint b); // greatest commmon denomator
 bigint lcm(const bigint& a, const bigint& b);
 
-unsigned long long log2(bigint x) noezcept;
-unsigned long long log10(const bigint& x) noexcept;
-unsigned long long log(const bigint& x, unsigned long long base) noexcept;
+unsigned long long log2(bigint x);
+unsigned long long log10(const bigint& x);
+unsigned long long log(const bigint& x, unsigned long long base);
 
 std::ostream& operator<<(std::ostream& ostream, const bigint& bignum); // output operator
 std::istream& operator>>(std::istream& istream, bigint& bignum); // input operator
