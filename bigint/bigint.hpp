@@ -444,7 +444,7 @@ public:
         return unsigned_a < x;
     }
 
-    bigint& operator++() &
+    bigint& operator++()&
     {
         if (is_negative()) {
             mIsNegative = false;
@@ -473,7 +473,7 @@ public:
 
     
 
-    bigint& operator--() &
+    bigint& operator--()&
     {
         if (!*this) {
             mIsNegative = true;
@@ -601,12 +601,7 @@ public: /******* FRIENDS AND STATICS ******/
             return 0;
         return 1;
     }
-    int compare(const bigint& that) const  noexcept 
-    {
-        auto& a = *this;
-        auto& b = that;
 
-<<<<<<< HEAD
     /// @brief compares 
     /// @return -1 if a  <  b
     /// @return  0 if a  == b
@@ -616,14 +611,6 @@ public: /******* FRIENDS AND STATICS ******/
         return compare<const bigint&>(that);
     }
 
-=======
-        if (a < b)
-            return -1;
-        if (a == b)
-            return 0;
-        return 1;
-    }
->>>>>>> 61234e0e7ab0c0409ac749c592f379dac993c615
     /// @brief compares using absolute value faster than abs(a).compares(abs(b))
     /// @return -1 if a  <  b
     /// @return  0 if a  == b

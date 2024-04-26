@@ -36,8 +36,9 @@ bigint zxshady::sqrt(bigint x)
 
 
     bigint x0 = 1;
+    bigint x1;
 start:
-    bigint x1 = ((x / x0) + x0).half();
+    x1 = ((x / x0) + x0).half();
     if (x0 == x1 || x0 == (x1 - 1)) {
         return x0;
     }
@@ -192,10 +193,8 @@ bigint bigint::sub(const bigint& a, const bigint& b, bool a_negative, bool b_neg
 
     if (a_negative && b_negative) {
         // -a - -b == (b - a)
-        auto ret = sub(b, a, false, false);
-        ret.set_negative();
-        return ret;
-
+        // -2 - -3 == -2 + 3 = 3 - 2;
+        return sub(b, a, false, false);
     }
 
 
@@ -284,7 +283,7 @@ bigint bigint::div(const bigint& a, const bigint& b, bool a_negative, bool b_neg
 
     bigint current{};  // current number in process of division
     bigint ret{ noinit_t{} };
-    ret.mNumbers.reserve(a.mNumbers.size());
+    ret.mNumbers.resize(a.mNumbers.size());
     auto index = ret.mNumbers.size() - 1;
     const auto end = a.mNumbers.crend();
     for (auto iter = a.mNumbers.crbegin(); iter != end; ++iter) {
@@ -299,7 +298,8 @@ bigint bigint::div(const bigint& a, const bigint& b, bool a_negative, bool b_neg
             else
                 end = mid - 1;
         }
-        ret.mNumbers.insert(ret.mNumbers.begin(), end);
+        ret.mNumbers[index] = end;
+        --index;
         current -= end * b;
     }
 

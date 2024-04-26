@@ -12,6 +12,7 @@
 #include <numeric>
 #include <iostream>
 
+
 #define TEST_CASE(a,b) std::puts("reached "#a " " # b" !");
 #define REQUIRE(...) do{try{assert(__VA_ARGS__);}catch(...){assert(false);}}while(false)
 #define CHECK(x) if(!(x)) { std::printf("line %d check failed...",__LINE__);}
