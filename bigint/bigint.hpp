@@ -465,8 +465,10 @@ public:
                 index++;
                 goto start;
             }
+        } 
+        else {
+            mNumbers.push_back(1);
         }
-        mNumbers.push_back(1);
         return *this;
     }
 
