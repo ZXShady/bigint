@@ -32,6 +32,8 @@ bigint j{}; // fastest way to initialize to zero
 bigint k; // fastest way to initialize to zero
 //bigint l(); // silent error it is a function declaration
 bigint m{0} // is slower than two above
+bigint o{"0xff"}; // 255
+bigint p("0B1101"); // 13
 ```
 ---
 # avaible operators
