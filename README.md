@@ -1,14 +1,12 @@
 # BigInt
 ## Big Integer Library for C++ 11 and above
-### bigint is a C++ library which can handle Very very well very __Big Integers__. It can do the *factorial* of __1000000...__ (given enough time) it can go very big it can do pow(15,1351)...
+### bigint is a C++ library which can handle *very very very* __Big Integers__. It can do the *factorial* of __1000000...__ (given enough time) it can go very big it can do pow(15,1351)...
 
 ---
 
 # How to use it?
 ```c++
-#include "bigint.hpp"     // with proper file path and link bigint.cpp
-// or just
-#include "single_header_bigint.hpp" // no linking needed
+#include "bigint/bigint.hpp"     // with proper file path and link bigint.cpp
 ```
 ---
 
