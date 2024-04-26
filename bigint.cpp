@@ -10,42 +10,7 @@
 
 using namespace zxshady;
 
-bigint::bigint(const char* begin,const char* end)
-{
-    if (*begin == '-') {
-        mIsNegative = true;
-        ++begin;
-    }
-    else {
-        mIsNegative = false;
-    }
-
-    // "01208021380"
-    while(begin != end && *begin == '0')
-        ++begin;
-
-    std::reverse_iterator<const char*> rbegin{ end };
-    std::reverse_iterator<const char*> rend{ begin };
-
-    auto it = rbegin;
-    while (it != rend) {
-        number_type num = 0;
-        for (std::size_t i = 0; i < kDigitCountOfMax && it != rend; ++i, ++it) {
-            if (std::isdigit(*it)) {
-                //1234567890
-                num += static_cast<number_type>(math::pow10(i) * (*it - '0'));
-            } else {
-                throw std::invalid_argument("zxshady::bigint(const char* begin,const char* end) invalid string representation at position " + std::to_string(i) + " character was " + std::string(1,*it));
-            }
-        }
-        mNumbers.push_back(num);
-    }
-
-    fix();
-    if (mNumbers.empty())
-        *this = bigint();
-}
-bigint zxshady::sqrt(const bigint& x)
+bigint zxshady::sqrt(bigint x)
 {
     if (x.is_negative())
         throw std::invalid_argument("zxshady::sqrt(const bigint& x) x must not be negative");
@@ -54,32 +19,30 @@ bigint zxshady::sqrt(const bigint& x)
     if (!x)
         return bigint{ 0 };
 
-    if (x < 4)
+    if (x < static_cast<unsigned char>(4))
         return 1;
-    if (x < 9)
+    if (x < static_cast<unsigned char>(9))
         return 2;
-    if (x < 16)
+    if (x < static_cast<unsigned char>(16))
         return 3;
-    if (x < 25)
+    if (x < static_cast<unsigned char>(25))
         return 4;
-    if (x < 36)
+    if (x < static_cast<unsigned char>(36))
         return 5;
-    if (x < 49)
+    if (x < static_cast<unsigned char>(49))
         return 6;
-    if (x < 64)
+    if (x < static_cast<unsigned char>(64))
         return 7;
 
 
-    bigint n = x;
     bigint x0 = 1;
 start:
-    const bigint x1 = ((n / x0) + x0) / 2;
+    bigint x1 = ((x / x0) + x0).half();
     if (x0 == x1 || x0 == (x1 - 1)) {
         return x0;
     }
-    x0 = x1;
+    x0 = std::move(x1);
     goto start;
-    return x0;
 }
 bool bigint::is_pow_of_10() const noexcept
 {
@@ -493,10 +456,10 @@ bigint zxshady::pow(bigint base, unsigned long long exponent)
     if (!base)
         return bigint{};
 
-    if (base == 10) // short cut for faster execution
+    if (base == static_cast<unsigned char>(10)) // short cut for faster execution
         return bigint::pow10(exponent);
 
-    if (base == 1)
+    if (base == static_cast<unsigned char>(1))
         return bigint{ 1 };
 
     if (exponent == 0)
@@ -527,7 +490,7 @@ bigint bigint::pow10(unsigned long long exponent)
 }
 bool zxshady::bigint::is_prime() const noexcept
 {
-    if (*this == (unsigned char)2)
+    if (*this == static_cast<unsigned char>(2))
         return true;
 
     if (is_negative() || is_even() || !*this || !(mod(*this, 3)))

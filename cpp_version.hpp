@@ -1,0 +1,56 @@
+#ifndef ZXSHADY_VERSION_CPP_VERSION_HPP
+#define ZXSHADY_VERSION_CPP_VERSION_HPP
+
+#define ZXSHADY_MSVC  (1ul << 0ul)
+#define ZXSHADY_GCC   (1ul << 1ul)
+#define ZXSHADY_CLANG (1ul << 2ul)
+
+#if defined(_MSC_VER) && !defined(__clang__)
+#define ZXSHADY_CPP_VER _MSVC_LANG
+#else
+#define ZXSHADY_CPP_VER __cplusplus
+#endif
+
+#if ZXSHADY_CPP_VER >=  201103L
+#define ZXSHADY_CPP11
+#if ZXSHADY_CPP_VER == 201103L  
+#define ZXSHADY_CPP_CURRENT_VERSION 11
+#endif
+
+#endif
+
+#if ZXSHADY_CPP_VER >=  201402L
+#define ZXSHADY_CPP14
+
+#if ZXSHADY_CPP_VER == 201402L  
+#define ZXSHADY_CPP_CURRENT_VERSION 14
+#endif
+
+#endif
+
+#if ZXSHADY_CPP_VER >= 201703L
+#define ZXSHADY_CPP17
+
+#if ZXSHADY_CPP_VER == 201703L  
+#define ZXSHADY_CPP_CURRENT_VERSION 17
+#endif
+
+
+#endif
+
+#if ZXSHADY_CPP_VER >= 202002L
+#define ZXSHADY_CPP20
+#if ZXSHADY_CPP_VER == 202002L  
+#define ZXSHADY_CPP_CURRENT_VERSION 20
+#endif
+
+#endif
+
+#if ZXSHADY_CPP_VER >= 202302L
+#define ZXSHADY_CPP23
+#if ZXSHADY_CPP_VER == 202302L  
+#define ZXSHADY_CPP_CURRENT_VERSION 23
+#endif
+#endif
+
+#endif // !ZXSHADY_VERSION_CPP_VERSION_HPP

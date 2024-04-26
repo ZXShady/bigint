@@ -1,101 +1,9 @@
-
-#ifndef ZXSHADY_VERSION_CPP_VERSION_HPP
-#define ZXSHADY_VERSION_CPP_VERSION_HPP
-
-#if defined(_MSC_VER) && !defined(__clang__)
-    #define ZXSHADY_CPP_VER _MSVC_LANG 
-#else
-    #define ZXSHADY_CPP_VER __cplusplus
-#endif
-
-#if ZXSHADY_CPP_VER >=  201103L
-    #define ZXSHADY_CPP11
-#if ZXSHADY_CPP_VER == 201103L  
-#define ZXSHADY_CPP_CURRENT_VERSION 11
-#endif
-
-#endif
-
-#if ZXSHADY_CPP_VER >=  201402L
-    #define ZXSHADY_CPP14
-    
-    #if ZXSHADY_CPP_VER == 201402L  
-    #define ZXSHADY_CPP_CURRENT_VERSION 14
-    #endif
-
-#endif
-
-#if ZXSHADY_CPP_VER >= 201703L
-    #define ZXSHADY_CPP17
-    
-    #if ZXSHADY_CPP_VER == 201703L  
-    #define ZXSHADY_CPP_CURRENT_VERSION 17
-    #endif
-
-
-#endif
-
-#if ZXSHADY_CPP_VER >= 202002L
-    #define ZXSHADY_CPP20
-    #if ZXSHADY_CPP_VER == 202002L  
-    #define ZXSHADY_CPP_CURRENT_VERSION 20
-    #endif
-    
-#endif
-
-#if ZXSHADY_CPP_VER >= 202302L
-    #define ZXSHADY_CPP23
-    #if ZXSHADY_CPP_VER == 202302L  
-    #define ZXSHADY_CPP_CURRENT_VERSION 23
-    #endif
-#endif
-
-#ifdef ZXSHADY_CPP14
-
-#define ZXSHADY_CONSTEXPR14 constexpr
-#else
-#define ZXSHADY_CONSTEXPR14
-#endif
-
-#ifdef ZXSHADY_CPP17
-
-#define ZXSHADY_NODISCARD [[nodiscard]]
-#define ZXSHADY_CONSTEXPR17 constexpr
-#else
-#define ZXSHADY_CONSTEXPR17
-#define ZXSHADY_NODISCARD
-#endif
-
-#if ZXSHADY_CPP_CURRENT_VERSION >= 20
-
-#define ZXSHADY_NODISCARD_MSG(msg) [[nodiscard(msg)]]
-
-#else
-
-#define ZXSHADY_NODISCARD_MSG(msg) ZXSHADY_NODISCARD
-
-#endif
-
-
-
-#endif // !ZXSHADY_VERSION_CPP_VERSION_HPP
-
-
-
-#ifdef ZXSHADY_NO_EXCEPTIONS
-
-#define ZXSHADY_THROW(type) throw type;
-
-#else
-
-#define ZXSHADY_THROW(type) assert(false);
-
-#endif
-
-
-
 #ifndef ZXSHADY_BIGINT_HPP
 #define ZXSHADY_BIGINT_HPP
+
+#include "cpp_version.hpp"
+#include "macros.hpp"
+#include "math.hpp"
 
 #include <iosfwd>
 
@@ -105,6 +13,7 @@
 #include <limits>
 #include <stdexcept>
 #include <utility>
+#include <iterator>
 
 #include <cstddef>
 #include <cstring>
@@ -123,105 +32,23 @@ namespace zxshady {
 // https://en.cppreference.com/w/cpp/utility/unreachable
 [[noreturn]] inline void unreachable()
 {
-    // Uses compiler specific extensions if possible.
-    // Even if no extension is used, undefined behavior is still raised by
-    // an empty function body and the noreturn attribute.
 #if defined(_MSC_VER) && !defined(__clang__) // MSVC
     __assume(false);
 #else // GCC, Clang
     __builtin_unreachable();
 #endif
 }
-
-template<class T,typename std::enable_if<std::is_signed<T>::value,int>::type = 0>
-constexpr bool is_negative(T t) noexcept
-{
-    return t < 0;
-}
-
-template<class T,typename std::enable_if<std::is_unsigned<T>::value,int>::type = 0>
-constexpr bool is_negative(T t) noexcept
-{
-    return false;
-}
-
-template<class T>
-constexpr bool is_positive(T t) noexcept
-{
-    return !is_negative(t);
-}
-
-class math {
-public:
-    math() = delete;
-    math(const math&) = delete;
-    math(math&&) = delete;
-    void operator=(const math&) = delete;
-    void operator=(math&&) = delete;
-    ~math() = delete;
+template<typename T>
+struct remove_cvref : public std::remove_cv<typename std::remove_reference<T>::type> {};
 
 
-    template<class T>
-    static constexpr T abs(T x) noexcept
-    {
-        return (is_negative(x)) ? (-x) : x;
-    }
+#ifdef __cpp_alias_templates
 
-    template<class T>
-    static constexpr typename std::make_unsigned<T>::type unsigned_abs(T x) noexcept
-    {
-        return (x < 0) ? static_cast<typename std::make_unsigned<T>::type>(-1 * (x + 1)) + 1 : x;
-    }
+template<typename T>
+using remove_cvref_t = typename remove_cvref<T>::type;
 
-    static constexpr unsigned long long pow2(unsigned long long exponent)
-    {
-        return 1ULL << exponent;
-    }
+#endif
 
-    static ZXSHADY_CONSTEXPR14 unsigned long long pow10(unsigned long long exponent) noexcept
-    {
-        constexpr unsigned long long mPow10Table[] = {
-            1,
-            10,
-            100,
-            1000,
-            10000,
-            100000,
-            1000000,
-            10000000,
-            100000000,
-            1000000000,
-            10000000000,
-            100000000000,
-            1000000000000,
-            10000000000000,
-            100000000000000,
-            1000000000000000,
-            10000000000000000
-        };
-        return mPow10Table[exponent];
-    }
-
-    template<class Integral>
-    static ZXSHADY_CONSTEXPR14 Integral nth_digit(Integral x,unsigned long long place,unsigned long long count = 1) noexcept
-    {
-        static_assert(std::is_integral<Integral>::value, "std::is_integral<Integral>::value");
-        return math::unsigned_abs(x) / math::pow10(math::digit_count(x) - place) % math::pow10(count);
-    }
-
-
-    template<class T>
-    static ZXSHADY_CONSTEXPR14 std::size_t digit_count(T x) noexcept
-    {
-        std::size_t cnt{};
-        do
-            cnt++;
-        while (x /= 10);
-        return cnt;
-    }
-private:
-    
-};
 template<typename T,typename E = std::errc>
 struct result {
     T val;
@@ -269,23 +96,23 @@ public:
     bigint& operator=(bigint&&) &noexcept = default;
     ~bigint() noexcept = default;
 
-    template<class Integer, typename std::enable_if<
+    template<typename Integer, typename std::enable_if<
         std::is_integral<Integer>::value, int>::type = 0>
     bigint(Integer num) : mIsNegative(false)
     {
         if (::zxshady::is_negative(num)) {
             mIsNegative = true;
-            num = math::unsigned_abs(num);
         }
+        auto unsigned_num = math::unsigned_abs(num);
 
         if ZXSHADY_CONSTEXPR17(sizeof(num) < sizeof(number_type))
         {
-            mNumbers.push_back(num);
+            mNumbers.push_back(unsigned_num);
         }
         else {
-            while (num != 0) {
-                mNumbers.push_back(num % kMaxDigitsInNumber);
-                num /= kMaxDigitsInNumber;
+            while (unsigned_num != 0) {
+                mNumbers.push_back(unsigned_num % kMaxDigitsInNumber);
+                unsigned_num /= kMaxDigitsInNumber;
             }
         }
 
@@ -295,23 +122,107 @@ public:
 
 
     bigint(std::nullptr_t) = delete;
-    bigint(const char* begin, const char* end);
+
+    template<typename InputIter, typename std::enable_if<
+        !std::is_integral<InputIter>::value, int>::type = 0>
+    bigint(InputIter begin, InputIter end)
+    {
+        static_assert(std::is_same<char, typename remove_cvref<decltype(*begin)>::type>::value,"InputIter derefenced must return a char");
+            int base = 10;
+        if (*begin == '-') {
+            mIsNegative = true;
+            ++begin;
+        }
+        else {
+            if (*begin == '+')
+                ++begin;
+            mIsNegative = false;
+        }
+        if (begin + 1 != end) {
+            if (*begin == '0') {
+                ++begin;
+                if (*begin == 'x' || *begin == 'X') {
+                    base = 16;
+                }
+                else if (*begin == 'b' || *begin == 'B') {
+                    base = 16;
+                }
+                ++begin;
+            }
+        }
+        // "01208021380"
+        while (begin != end && *begin == '0')
+            ++begin;
+
+        std::reverse_iterator<InputIter> rbegin{ end };
+        std::reverse_iterator<InputIter> rend{ begin };
+
+        mNumbers.reserve(static_cast<std::size_t>(std::distance(rbegin, rend)));
+        auto it = rbegin;
+        auto parse = [](char Char, int base, int index)
+            {
+                if (base == 10) {
+                    if (Char >= '0' && Char <= '9')
+                        return Char - '0';
+                }
+                if (base == 16) {
+                    if (Char >= '0' && Char <= '9')
+                        return Char - '0';
+                    Char = std::tolower(Char);
+                    if (Char >= 'a' && Char <= 'f')
+                        return 10 + Char - 'a';
+                }
+
+                if (base == 2) {
+                    if (Char >= '0' && Char <= '1')
+                        return Char - '0';
+                }
+
+                throw std::invalid_argument("zxshady::bigint(InputIter begin,InputIter end) invalid string representation at position " + std::to_string(index) + " character was " + Char);
+            };
+        std::size_t max = 0;
+        switch (base) {
+            case 2:
+                max = kDigitCountOfMaxInBinary;
+                break;
+            case 10:
+                max = kDigitCountOfMax;
+                break;
+            case 16:
+                max = kDigitCountOfMaxInHex;
+                break;
+        }
+        while (it != rend) {
+            number_type num = 0;
+            for (std::size_t i = 0; i < max && it != rend; ++i, ++it) {
+                const auto parsed = parse(*it, base, static_cast<int>(i));
+                const auto pow = math::pow(base,i);
+                num += static_cast<number_type>(pow * parsed);
+            }
+            mNumbers.push_back(num);
+        }
+
+        fix();
+        if (mNumbers.empty())
+            zero();
+    }
+
     bigint(const char* str, std::size_t size) : bigint(str, str + size) {}
-    explicit bigint(const std::string& str) : bigint(str.c_str(), str.c_str() + str.size()) {}
-    explicit bigint(const char* numStr) : bigint(numStr, numStr + std::strlen(numStr)) {}
+    explicit bigint(const std::string& str) : bigint(str.c_str(), str.size()) {}
+    explicit bigint(const char* str) : bigint(str, std::strlen(str)) {}
 
 
-    bigint& operator=(const char* s)&
+    bigint& operator=(const char* s) &
     {
         return *this = bigint{ s };
     }
 
-    bigint& operator=(const std::string& s)&
+    bigint& operator=(const std::string& s) &
     {
         return *this = bigint{ s };
     }
 
-    template<class Integral, typename std::enable_if<
+    template<typename Integral, typename std::enable_if<
         std::is_integral<Integral>::value, int>::type = 0>
     bigint& operator=(Integral num) & noexcept(sizeof(Integral) < sizeof(number_type))
     {
@@ -319,15 +230,15 @@ public:
         // since the underlying vector has enough memory atleast 1 number_type it will never throw!
         mIsNegative = ::zxshady::is_negative(num);
         mNumbers.clear();
-        num = math::unsigned_abs(num);
+        auto unsigned_num = math::unsigned_abs(num);
         if ZXSHADY_CONSTEXPR17(sizeof(num) < sizeof(number_type))
         {
-            mNumbers.push_back(num);
+            mNumbers.push_back(unsigned_num);
         }
         else {
-            while (num != 0) {
-                mNumbers.push_back(num % kMaxDigitsInNumber);
-                num /= kMaxDigitsInNumber;
+            while (unsigned_num != 0) {
+                mNumbers.push_back(unsigned_num % kMaxDigitsInNumber);
+                unsigned_num /= kMaxDigitsInNumber;
             }
         }
 
@@ -336,7 +247,7 @@ public:
         return *this;
     }
 
-    template<class T>
+    template<typename T>
     ZXSHADY_NODISCARD T to() const
     {
         static_assert(std::is_integral<T>::value, "T in zxshady::bigint::to<T>() must be an integral type.");
@@ -357,7 +268,7 @@ public:
         return x;
     }
 
-    template<class T>
+    template<typename T>
     ZXSHADY_NODISCARD result<T> non_throwing_to() const noexcept
     {
         static_assert(std::is_integral<T>::value, "T in zxshady::bigint::to<T>() must be an integral type.");
@@ -395,22 +306,6 @@ public:
         return mNumbers.size() == 1 && mNumbers[0] == 0;
     }
 
-    /// @brief makes a copy of *this (NOTE to make it positive use bigint::abs(*this))
-    /// @return a copy of *this
-    ZXSHADY_NODISCARD bigint operator+() const
-    {
-        return *this;
-    };
-
-    /// @brief negates sign
-    /// @return negates the sign and returns a copy
-    ZXSHADY_NODISCARD bigint operator-() const
-    {
-        bigint copy = *this;
-        copy.flip_sign();
-        return copy;
-    };
-
     void swap(bigint& that) & noexcept
     {
         using std::swap;
@@ -418,38 +313,31 @@ public:
         swap(mNumbers, that.mNumbers);
     }
 
-    friend void swap(bigint& a,bigint& b) noexcept
-    {
-        a.swap(b);
-    }
-
-
-
-    bigint& operator+=(const bigint& rhs)&
+    bigint& operator+=(const bigint& rhs) &
     {
         *this = add(*this, rhs, this->is_negative(), rhs.is_negative());
         return *this;
     }
 
-    bigint& operator-=(const bigint& rhs)&
+    bigint& operator-=(const bigint& rhs) &
     {
         *this = sub(*this, rhs, this->is_negative(), rhs.is_negative());
         return *this;
     }
 
-    bigint& operator*=(const bigint& rhs)&
+    bigint& operator*=(const bigint& rhs) &
     {
         *this = mul(*this, rhs, this->is_negative(), rhs.is_negative());
         return *this;
     }
 
-    bigint& operator/=(const bigint& rhs)&
+    bigint& operator/=(const bigint& rhs) &
     {
         *this = div(*this, rhs, this->is_negative(), rhs.is_negative());
         return *this;
     }
 
-    bigint& operator%=(const bigint& rhs)&
+    bigint& operator%=(const bigint& rhs) &
     {
         *this = mod(*this, rhs);
         return *this;
@@ -462,31 +350,22 @@ public:
         if (a.is_negative() != zxshady::is_negative(b))
             return false;
 
-        if (a.digit_count() != zxshady::math::digit_count(b))
-            return false;
-
-        b = zxshady::math::abs(b);
+        auto unsigned_b = zxshady::math::unsigned_abs(b);
         
         if ZXSHADY_CONSTEXPR17(sizeof(b) < sizeof(number_type))
         {
             // compare least significant
-            return a.mNumbers[0] == b;
+            return a.mNumbers.size() == 1 && a.mNumbers[0] == unsigned_b;
         }
         else {
-            // a == b
-            // i = 0
-            // i = 1
-            // i = 2
-            // a = {0}23
-            // b = 123
             std::size_t index = 0;
             const auto size = a.mNumbers.size();
-            while (b != 0 && index != size) {
-                if (a.mNumbers[index] != b % kMaxDigitsInNumber) {
+            while (unsigned_b != 0 && index != size) {
+                if (a.mNumbers[index] != unsigned_b % kMaxDigitsInNumber) {
                     return false;
                 }
                 else {
-                    b /= kMaxDigitsInNumber;
+                    unsigned_b /= kMaxDigitsInNumber;
                     index++;
                 }
             }
@@ -498,7 +377,7 @@ public:
     ZXSHADY_NODISCARD friend bool operator==(Integer a, const bigint& b) noexcept
     {
         static_assert(std::is_integral<Integer>::value, "zxshady::operator==(Integer,bigint) Integer must be an integral type.");
-        return (b == a);
+        return b == a;
     }
 
 
@@ -526,26 +405,24 @@ public:
         auto bcount = zxshady::math::digit_count(b);
 
         if (acount != bcount)
-            return acount < bcount;
+            return (acount < bcount) != a.is_negative();
 
-        b = math::unsigned_abs(b);
+        auto unsigned_b = math::unsigned_abs(b);
 
         if ZXSHADY_CONSTEXPR17(sizeof(Integer) < sizeof(number_type))
-            return a.mNumbers[0] < b;
+            return a.mNumbers[0] < unsigned_b;
 
-        Integer x{ 0 };
+        decltype(unsigned_b) x{ 0 };
 
         const auto end = a.mNumbers.crend();
         for (auto iter = a.mNumbers.crbegin(); iter != end; ++iter)
             x = *iter + x * kMaxDigitsInNumber;
-        return x < b;
+        return x < unsigned_b;
     }
 
-    template<class Integer>
+    template<class Integer,typename std::enable_if<std::is_integral<Integer>::value,int>::type = 0>
     ZXSHADY_NODISCARD friend bool operator<(Integer a, const bigint& b) noexcept
     {
-        static_assert(std::is_integral<Integer>::value, "zxshady::bigint::operator<(bigint,Integer) Integer must an integral type");
-
         if (::zxshady::is_negative(a) && b.is_positive())
             return true;
 
@@ -553,47 +430,32 @@ public:
         const auto bcount = b.digit_count();
 
         if (acount != bcount)
-            return acount < bcount;
+            return (acount < bcount) != ::zxshady::is_negative(a);
 
-        a = math::unsigned_abs(a);
+        auto unsigned_a = math::unsigned_abs(a);
         if ZXSHADY_CONSTEXPR17(sizeof(Integer) < sizeof(number_type))
-            return a < b.mNumbers[0];
+            return unsigned_a < b.mNumbers[0];
 
-        Integer x{ 0 };
+        decltype(unsigned_a) x{ 0 };
 
         const auto end = b.mNumbers.crend();
         for (auto iter = b.mNumbers.crbegin(); iter != end; ++iter)
             x = *iter + x * kMaxDigitsInNumber;
-        return a < x;
-    }
-
-
-    ZXSHADY_NODISCARD friend bool operator>(const bigint& a, const bigint& b)
-    {
-        return b < a;
-    }
-
-    ZXSHADY_NODISCARD friend bool operator>=(const bigint& a, const bigint& b)
-    {
-        return !(a < b);
-    }
-    ZXSHADY_NODISCARD friend bool operator<=(const bigint& a, const bigint& b)
-    {
-        return !(a > b);
+        return unsigned_a < x;
     }
 
     bigint& operator++()&
     {
         if (is_negative()) {
             mIsNegative = false;
-            --*this;
+            --(*this);
             mIsNegative = true;
+            return *this;
         }
 
         const auto size = mNumbers.size();
         std::size_t index = 0;
     start:
-
         if (index < size) {
             auto& val = mNumbers[index];
 
@@ -604,21 +466,12 @@ public:
                 goto start;
             }
         }
-        else {
-            mNumbers.push_back(1);
-        }
+        mNumbers.push_back(1);
         return *this;
     }
 
 
-    ZXSHADY_NODISCARD_MSG("zxshady::bigint::operator++(int) post-fix increment incurs memory allocation (via the required copy) and overhead use prefix increment if you don't intend to use the value.")
-        bigint operator++(int) &
-    {
-        bigint copy = *this;
-        ++(*this);
-        return copy;
-    }
-
+    
 
     bigint& operator--()&
     {
@@ -630,7 +483,7 @@ public:
         // checking for 0 and is_negative == *this < 1
         if (is_negative()) {
             mIsNegative = false;
-            ++*this;
+            ++(*this);
             mIsNegative = true;
             return *this;
         }
@@ -644,31 +497,36 @@ public:
         // [3,0]
         //    1
         // least significant
-        auto& back = mNumbers[index]; 
+        auto& back = mNumbers[index];
 
         if (back == 0) {
             back = kMaxDigitsInNumber - 1;
             index++;
             goto start;
         }
-        else {
-            --back;
-        }
+
+        --back;
         return *this;
     }
 
-    ZXSHADY_NODISCARD_MSG("zxshady::bigint::operator--(int) post-fix increment incurs memory allocation (via the required copy) and overhead use prefix decrement if you don't intend to use the value.")
-        bigint operator--(int) &
+    ZXSHADY_NODISCARD_MSG("zxshady::bigint::operator++(int) post-fix increment incurs memory allocation (via the required copy) and overhead use prefix increment if you don't intend to use the value.")
+    bigint operator++(int) &
     {
-        auto copy{ *this };
+        bigint copy = *this;
+        ++(*this);
+        return copy;
+    }
+    ZXSHADY_NODISCARD_MSG("zxshady::bigint::operator--(int) post-fix decrement incurs memory allocation (via the required copy) and overhead use prefix decrement if you don't intend to use the value.")
+    bigint operator--(int) &
+    {
+        bigint copy = *this;
         --(*this);
         return copy;
     }
 
 
     bool is_prime() const noexcept;
-
-    bool is_even() const noexcept { return mNumbers.front() % 2 == 0; }
+    bool is_even() const noexcept { return mNumbers[0] % 2 == 0; }
     bool is_odd() const noexcept { return !is_even(); }
     void flip_sign() & noexcept { if (*this) mIsNegative = !mIsNegative; }
     void set_positive() & noexcept { mIsNegative = false; }
@@ -685,15 +543,10 @@ public:
 
     /// @brief reverses the number
     /// @note slow function
-    void reverse()
+    void reverse() &
     {
         auto str = to_string();
-        auto first = str.begin();
-        auto last = str.end();
-
-        while (first != last && first != --last)
-            std::swap(*(first++), *last);
-        *this = bigint{ str };
+        *this = bigint( str.crbegin(),str.crend() );
     }
 
     bigint& half() & noexcept;
@@ -737,7 +590,7 @@ public: /******* FRIENDS AND STATICS ******/
     /// @return  0 if a  == b
     /// @return +1 if a  >  b
     template<class T>
-    int compare(T that) noexcept
+    int compare(T that) const noexcept
     {
         auto& a = *this;
         auto& b = that;
@@ -749,11 +602,20 @@ public: /******* FRIENDS AND STATICS ******/
         return 1;
     }
 
+    /// @brief compares 
+    /// @return -1 if a  <  b
+    /// @return  0 if a  == b
+    /// @return +1 if a  >  b
+    int compare(const bigint& that) const noexcept
+    {
+        return compare<const bigint&>(that);
+    }
+
     /// @brief compares using absolute value faster than abs(a).compares(abs(b))
     /// @return -1 if a  <  b
     /// @return  0 if a  == b
     /// @return +1 if a  >  b
-    int signless_compare(const bigint& that)
+    int signless_compare(const bigint& that) const noexcept
     {
         auto& a = *this;
         auto& b = that;
@@ -797,8 +659,12 @@ private:
     }
 
 private:
-    constexpr static number_type kDigitCountOfMax = 9;
     constexpr static number_type kMaxDigitsInNumber = static_cast<number_type>(1e9);
+
+    constexpr static auto kDigitCountOfMaxInHex    = zxshady::math::log(kMaxDigitsInNumber, 16);
+    constexpr static auto kDigitCountOfMaxInBinary = zxshady::math::log(kMaxDigitsInNumber, 2);
+    constexpr static auto kDigitCountOfMax         = zxshady::math::log(kMaxDigitsInNumber,10);
+
 private:
     std::vector<number_type> mNumbers;
     bool mIsNegative;
@@ -842,30 +708,29 @@ template<class T> ZXSHADY_NODISCARD bool operator<=(std::integral_constant<T,T(0
 template<class T> ZXSHADY_NODISCARD bool operator>=(std::integral_constant<T,T(0)>,const bigint& x) noexcept { return x.is_negative() || !x;}
 
 
-ZXSHADY_NODISCARD inline bigint operator+(bigint lhs, const bigint& rhs) { return lhs += rhs; }
-ZXSHADY_NODISCARD inline bigint operator-(bigint lhs, const bigint& rhs) { return lhs -= rhs; }
-ZXSHADY_NODISCARD inline bigint operator*(bigint lhs, const bigint& rhs) { return lhs *= rhs; }
-ZXSHADY_NODISCARD inline bigint operator/(bigint lhs, const bigint& rhs) { return lhs /= rhs; }
-ZXSHADY_NODISCARD inline bigint operator%(bigint lhs, const bigint& rhs) { return lhs %= rhs; }
+ZXSHADY_NODISCARD inline bool operator==(const bigint& a,const std::string& b) noexcept { return a == bigint(b);}
+ZXSHADY_NODISCARD inline bool operator==(const bigint& a, const char* b) noexcept { return a == bigint(b); }
+ZXSHADY_NODISCARD inline bool operator==(const std::string& a, const bigint& b) noexcept { return b == a; }
+ZXSHADY_NODISCARD inline bool operator==(const char* a, const bigint& b) noexcept { return b == a; }
 
-//using unsigned_bigint = zxshady::bigint;
-ZXSHADY_NODISCARD inline bool operator==(const std::string& a, const bigint& b) noexcept
-{return (bigint{ a } == b);}
-ZXSHADY_NODISCARD inline bool operator==(const bigint& a,const std::string& b) noexcept
-{return (a == bigint{ b });}
+ZXSHADY_NODISCARD inline bool operator<(const bigint& a,const std::string& b) noexcept { return a < bigint(b);}
+ZXSHADY_NODISCARD inline bool operator<(const bigint& a, const char* b) noexcept { return a < bigint(b); }
 
-ZXSHADY_NODISCARD inline bool operator==(const char* a, const bigint& b) noexcept
-{return (bigint{ a } == b);}
-ZXSHADY_NODISCARD inline bool operator==(const bigint& a,const char* b) noexcept
-{return (a == bigint{ b });}
+ZXSHADY_NODISCARD inline bool operator<(const std::string& a,const bigint& b) noexcept { return bigint(a) < b;}
+ZXSHADY_NODISCARD inline bool operator<(const char* a,const bigint& b) noexcept { return bigint(a) < b; }
 
-#ifndef ZXSHADY_CPP20 // no need in C++20 :) thank you C++ for being a decent language
 
-ZXSHADY_NODISCARD inline bool operator!=(const bigint& a, const bigint& b) noexcept{return !(a==b);}
+ZXSHADY_DEFINE_COMPARISONS(const bigint&, const bigint&)
+ZXSHADY_DEFINE_COMPARISONS(const bigint&, const std::string&)
+ZXSHADY_DEFINE_COMPARISONS(const bigint&, const char*)
+ZXSHADY_DEFINE_COMPARISONS(const std::string&,const bigint&)
+ZXSHADY_DEFINE_COMPARISONS(const char*,const bigint&)
+
+ZXSHADY_DEFINE_ARITHMETIC(bigint,const bigint&)
+
+
 template<class Integer,typename std::enable_if<std::is_integral<Integer>::value,int>::type = 0 > ZXSHADY_NODISCARD bool operator!=(Integer a, const bigint& b) noexcept { return !(a == b); }
 template<class Integer,typename std::enable_if<std::is_integral<Integer>::value,int>::type = 0 > ZXSHADY_NODISCARD bool operator!=(const bigint& a, Integer b) noexcept { return !(a == b); }
-
-#endif // !defined(ZXSHADY_CPP20)
 
 
 
@@ -905,6 +770,22 @@ ZXSHADY_NODISCARD bool operator>=(Integer a,const bigint& b) noexcept
     return !(a < b);
 }
 
+inline void swap(bigint& a,bigint& b) noexcept
+{
+    a.swap(b);
+}
+
+/// @brief makes a copy of *this (NOTE to make it positive use bigint::abs(*this))
+/// @return a copy of *this
+ZXSHADY_NODISCARD inline bigint operator+(bigint x)
+{return x;};
+
+/// @brief negates sign
+/// @return negates the sign and returns a copy
+ZXSHADY_NODISCARD inline bigint operator-(bigint x)
+{x.flip_sign();return x;};
+
+
 inline bigint abs(bigint x)
 {
     x.set_positive();
@@ -927,11 +808,14 @@ inline bigint fac(bigint x)
     }
     return x;
 }
+
+
+
 unsigned long long log2(bigint x);
 unsigned long long log10(const bigint& x);
 unsigned long long log(const bigint& x, unsigned long long base);
 bigint pow(bigint base, unsigned long long exponent);
-bigint sqrt(const bigint& x);
+bigint sqrt(bigint x);
 bigint gcd(bigint a, bigint b);
 bigint lcm(const bigint& a, const bigint& b);
 
@@ -1001,23 +885,23 @@ std::istream& operator>>(std::istream& istream, bigint& bignum);
 
 
         }
+
         inline namespace bigint_literals {
-        
+
         inline ::zxshady::bigint operator""_big(unsigned long long x)
         {
             return bigint{ x };
         }
 
-        inline ::zxshady::bigint operator""_big(const char* str,std::size_t len)
+        inline ::zxshady::bigint operator""_big(const char* str, std::size_t len)
         {
             return bigint{ str,str + len };
         }
 
         }
-
     }
-}
 
+}
 
 #endif // !ZXSHADY_BIGINT_HPP
 
