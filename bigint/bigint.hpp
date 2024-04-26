@@ -145,7 +145,7 @@ public:
                     base = 16;
                 }
                 else if (*begin == 'b' || *begin == 'B') {
-                    base = 16;
+                    base = 2;
                 }
                 ++begin;
             }
