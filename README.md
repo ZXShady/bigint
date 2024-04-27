@@ -13,7 +13,7 @@
 # Declaring and Intializing Variables.
 
 Declartion is done like making object of bigint class.
-Intialization can be done by passing *String* or *Integer* type at Object creation.
+Intialization can be done by passing *String* or *Integer* (including extended) types at Object creation.
 
 ```c++
 bigint a("1538901385913857893173895103987501387");     // big integer initialization with String
@@ -34,6 +34,7 @@ bigint k; // fastest way to initialize to zero
 bigint m{0} // is slower than two above
 bigint o{"0xDeAdBeEf"}; // 3735928559
 bigint p("0B1101"); // 13
+bigint q(static_cast<__int128>(1e30)); // extended integers
 ```
 ---
 # avaible operators
