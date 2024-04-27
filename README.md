@@ -58,7 +58,7 @@ hell:
 }
 c += 12; // same as c = c + 12; but it might be faster to use +=
 c /= 5;
-c -= "0000983109813409810948109384"; // will ignore leading zeroes
+c -= bigint("0000983109813409810948109384"); // will ignore leading zeroes
 c %= 2;
 --c; // way faster than c -= 1
 c--; // post-fix version is [[nodiscard]] might get warning or error
