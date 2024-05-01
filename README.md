@@ -39,10 +39,10 @@ bigint q(static_cast<__int128>(1e30)); // extended integers
 str = "ff";
 bigint r(str.begin(),str.end(),bigint::base::hex)
 str = "1111'1110'0001";
-bigint r(str.begin(),str.end(),bigint::base::bin,'\'') // seperator
+bigint s(str.begin(),str.end(),bigint::base::bin,'\'') // seperator
 str = "0xff'ff'ff'ff";
-bigint r(str.begin(),str.end(),'\'') // seperator
-bigint s("0o70"); // octal
+bigint t(str.begin(),str.end(),'\'') // seperator
+bigint u("0o70"); // octal
 ```
 ---
 # avaible operators
