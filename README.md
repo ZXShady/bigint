@@ -42,7 +42,7 @@ str = "1111'1110'0001";
 bigint r(str.begin(),str.end(),bigint::base::bin,'\'') // seperator
 str = "0xff'ff'ff'ff";
 bigint r(str.begin(),str.end(),'\'') // seperator
-
+bigint s("0o70"); // octal
 ```
 ---
 # avaible operators
