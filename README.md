@@ -96,6 +96,7 @@ a = +b; // DOES NOT DO abs(b) it just returns a copy...
 8. void reverse(); // reverses the number NOTE: slow function
 9. void zero(); // sets the number to 0 faster than a = 0
 10. bigint& half(); // halves the number way faster than a /= 2 returns *this for chaining effect
+10. bigint& double_(); doubles the number way faster than a *= 2 returns *this for chaning
 11. bool is_pow_of_10() const noexcept;
 12. bool is_pow_of_2() const noexcept;
 13. std::string to_string() const;
