@@ -5,15 +5,60 @@
 #include <iostream>
 #include <random>
 #include <limits>
+#include <memory>
+#include <sstream>
 
 #include "bigint.hpp"
 
 using namespace zxshady;
 
+template<typename T,std::size_t N>
+static constexpr std::size_t size(const volatile T(&)[N]) noexcept
+{
+    return N;
+}
+
+template<typename Integer>
+static void int_into_stream(Integer x,std::ostream& ostream)
+{
+    char buffer[1 + zxshady::math::constexpr_log((std::numeric_limits<Integer>::max)())];
+    int i = 0;
+    do {
+        buffer[i] = (x % 10) + '0';
+        i++;
+        x /= 10;
+    } while (x != 0);
+    for (; i > 0; --i) {
+        ostream.put(buffer[i-1]);
+    }
+}
+
+template<typename Integer>
+static void int_into_stream_hex(Integer x,std::ostream& ostream)
+{
+    static constexpr const char table[] = {
+        '0','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f'
+    };
+    
+    static_assert(sizeof(table) == 16, "table size different");
+    do {
+        ostream.put(table[x % 16]);
+        x /= 16;
+    } while (x);
+}
+
+template<typename Integer>
+static void int_into_stream_bin(Integer x,std::ostream& ostream)
+{
+    do {
+        ostream.put((x % 2) + '0');
+        x /= 2;
+    } while (x);
+}
 bigint zxshady::sqrt(bigint x)
 {
     if (x.is_negative())
-        throw std::invalid_argument("zxshady::sqrt(const bigint& x) x must not be negative");
+        throw std::domain_error("zxshady::sqrt(const bigint& x) x must not be negative");
 
     // 1 4 9 16 25 36
     if (!x)
@@ -45,6 +90,7 @@ start:
     x0 = std::move(x1);
     goto start;
 }
+
 bool bigint::is_pow_of_10() const noexcept
 {
     const auto end = mNumbers.cend() - 1;
@@ -55,16 +101,16 @@ bool bigint::is_pow_of_10() const noexcept
 
     
     switch (mNumbers.back()) {
-        case static_cast<number_type>(1):
-        case static_cast<number_type>(10):
-        case static_cast<number_type>(100):
-        case static_cast<number_type>(1000):
-        case static_cast<number_type>(10000):
-        case static_cast<number_type>(100000):
-        case static_cast<number_type>(1000000):
-        case static_cast<number_type>(10000000):
-        case static_cast<number_type>(100000000):
-        case static_cast<number_type>(1000000000):
+            case static_cast<number_type>(1):
+            case static_cast<number_type>(10):
+            case static_cast<number_type>(100):
+            case static_cast<number_type>(1000):
+            case static_cast<number_type>(10000):
+            case static_cast<number_type>(100000):
+            case static_cast<number_type>(1000000):
+            case static_cast<number_type>(10000000):
+            case static_cast<number_type>(100000000):
+            case static_cast<number_type>(1000000000):
             return true;
     }
     return false;
@@ -83,126 +129,102 @@ bool bigint::is_pow_of_2() const noexcept
 }
 std::string bigint::to_string() const
 {
-    std::string ret = is_negative()
-        ? "-"
-        : "";
-    const auto begin = mNumbers.crbegin();
-    const auto end = mNumbers.crend();
-    auto iter = begin;
-    if (iter == end) return ret;
-    ret += std::to_string(*iter);
-    ++iter;
-    // Print the digits in reverse order
-    // 135790, 753135, 390135, 13051, 91035, 610009, 102345
-    // [0,10]
-    // 10 ' 000000
-    for (; iter != end; ++iter) {
-        auto val = *iter;
-        auto cnt = zxshady::math::digit_count(val);
-        //printf("%d / %d", (int)digitcount(val), (int)kDigitCountOfMax);
-        auto difference = bigint::kDigitCountOfMax - cnt;
-
-        static constexpr const char* zeroes[] = {
-            "",
-            "0",
-            "00",
-            "000",
-            "0000",
-            "00000",
-            "000000",
-            "0000000",
-            "00000000",
-            "000000000",
-            "0000000000",
-            "00000000000",
-            "000000000000",
-            "0000000000000",
-            "00000000000000",
-            "000000000000000",
-            "0000000000000000",
-            "00000000000000000",
-            "000000000000000000",
-            "0000000000000000000",
-            "00000000000000000000",
-            "000000000000000000000",
-            "0000000000000000000000",
-            "00000000000000000000000",
-            "000000000000000000000000"
-        };
-        assert(difference < sizeof(zeroes) / sizeof(zeroes[0]));
-        ret += zeroes[difference];
-        ret += std::to_string(*iter);
-    }
-    return ret;
+    std::stringstream s;
+    s << *this;
+    return s.str();
 }
-bigint bigint::add(const bigint& a, const bigint& b, bool a_negative, bool b_negative) {
+
+void bigint::add_compound(bigint& a, const bigint& b, bool a_negative, bool b_negative) {
     
     if (!a_negative && b_negative) {
         // a + -b = a - b 
-        return sub(a, b, false, false);
+        sub_compound(a, b, false, false);
+        return;
     }
     
     if (a_negative && !b_negative) {
         // -a + b = b - a 
-        return sub(b, a, false, false);
+        bigint x = b;
+        sub_compound(x, a, false, false);
+        a = std::move(x);
+        return;
     }
     
     if (a_negative && b_negative) {
         // -a + -b = -(b + a)
-        auto ret = add(a, b, false, false);
-        ret.set_negative();
-        return ret;
+        add_compound(a, b, false, false);
+        a.set_negative();
+        return;
     }
 
-    bigint ret{ noinit_t{} };
     number_type carry = 0;
     
-    const auto asize = a.mNumbers.size();
-    const auto bsize = b.mNumbers.size();
-    const auto max = std::max(asize, bsize);
-
-    for (std::size_t i = 0; i < max; ++i) {
+    const std::size_t asize = a.mNumbers.size();
+    const std::size_t bsize = b.mNumbers.size();
+    const std::size_t max = (std::max)(asize, bsize);
+    const std::size_t min = (std::min)(asize, bsize);
+    std::size_t i = 0;
+    for (; i < min; ++i) {
         number_type sum = carry;
-        if (i < asize)
-            sum += a.mNumbers[i];
-        if (i < bsize)
-            sum += b.mNumbers[i];
+        sum += a.mNumbers[i];
+        sum += b.mNumbers[i];
 
-        ret.mNumbers.push_back(sum % kMaxDigitsInNumber);
+        a.mNumbers[i] = sum % kMaxDigitsInNumber;
         carry = sum / kMaxDigitsInNumber;
     }
-    if (carry > 0)
-        ret.mNumbers.push_back(carry);
-    
-    ret.fix();
-    return ret;
+
+    for (; i < max; ++i) {
+        number_type sum = carry;
+        if(i < bsize)
+            sum += b.mNumbers[i];
+
+        if (i < asize) {
+            sum += a.mNumbers[i];
+            a.mNumbers[i] = sum % kMaxDigitsInNumber;
+        }
+        else {
+            a.mNumbers.push_back(sum % kMaxDigitsInNumber);
+        }
+        carry = sum / kMaxDigitsInNumber;
+    }
+
+    if (carry != 0) {
+        a.mNumbers.push_back(carry);
+    }
+
+    a.fix();
 }
-bigint bigint::sub(const bigint& a, const bigint& b, bool a_negative, bool b_negative)
+
+void bigint::sub_compound(bigint& a, const bigint& b, bool a_negative, bool b_negative)
 {
     if (!a_negative && b_negative) {
         // a - -b == a + b
-        return add(a, b, false, false);
+        bigint::add_compound(a, b, false, false);
+        return;
     }
 
     if (a_negative && !b_negative) {
         // -a - b == -(a+b)
-        auto ret = add(a, b, false, false);
-        ret.set_negative();
-        return ret;
+        bigint::add_compound(a, b, false, false);
+        a.set_negative();
+        return;
     }
 
     if (a_negative && b_negative) {
         // -a - -b == (b - a)
         // -2 - -3 == -2 + 3 = 3 - 2;
-        return sub(b, a, false, false);
+        bigint x = b;
+        bigint::sub_compound(x, a, false, false);
+        a = std::move(x);
+        return;
     }
 
-
-
-    if (a < b) {
-        auto ret = b - a;
-        ret.flip_sign();
-        return ret;
+    if (a.signless_lt(b)) {
+        bigint x = b;
+        bigint::sub_compound(x,a,false,false);
+        a = std::move(x);
+        a.set_sign(!a_negative);
+        return;
     }
 
     //   2132
@@ -214,20 +236,18 @@ bigint bigint::sub(const bigint& a, const bigint& b, bool a_negative, bool b_neg
     // +899
     //  1 - 0
 
-    bigint ret{ zxshady::noinit_t{} };
     std::int64_t carry = 0;
-    const auto asize = a.mNumbers.size();
-    const auto bsize = b.mNumbers.size();
-    const auto max = (std::max)(asize, bsize);
-    for (std::size_t i = 0; i < max; i++) {
+    const std::size_t asize = a.mNumbers.size();
+    const std::size_t bsize = b.mNumbers.size();
+    const std::size_t min = (std::min)(asize, bsize);
+    const std::size_t max = (std::max)(asize, bsize);
+
+    std::size_t i = 0;
+    for (; i < min; i++) {
         std::int64_t diff = carry;
 
-        if (i < asize)
-            diff += static_cast<std::int64_t>(a.mNumbers[i]);
-
-        if (i < bsize) {
-            diff -= static_cast<std::int64_t>(b.mNumbers[i]);
-        }
+        diff += static_cast<std::int64_t>(a.mNumbers[i]);
+        diff -= static_cast<std::int64_t>(b.mNumbers[i]);
 
         if (diff < 0) {
             diff += kMaxDigitsInNumber;
@@ -236,11 +256,31 @@ bigint bigint::sub(const bigint& a, const bigint& b, bool a_negative, bool b_neg
         else {
             carry = 0;
         }
-        ret.mNumbers.push_back(static_cast<number_type>(diff % kMaxDigitsInNumber));
+        a.mNumbers[i] = static_cast<number_type>(diff % kMaxDigitsInNumber);
     }
-    ret.fix();
-    return ret;
+
+    for (; i < max; i++) {
+        std::int64_t diff = carry;
+
+        if(i < asize)
+           diff += static_cast<std::int64_t>(a.mNumbers[i]);
+        if(i < bsize)
+            diff -= static_cast<std::int64_t>(b.mNumbers[i]);
+
+        if (diff < 0) {
+            diff += kMaxDigitsInNumber;
+            carry = -1;
+        }
+        else {
+            carry = 0;
+        }
+
+        a.mNumbers[i] = static_cast<number_type>(diff % kMaxDigitsInNumber);
+    }
+
+    a.fix();
 }
+
 bigint bigint::mul(const bigint& a, const bigint& b, bool a_negative, bool b_negative) 
 {
     if (!a || !b) // using operator! to test for == 0 since it is hardcoded it will be faster!
@@ -270,6 +310,7 @@ bigint bigint::mul(const bigint& a, const bigint& b, bool a_negative, bool b_neg
     
     return ret;
 }
+
 bigint bigint::div(const bigint& a, const bigint& b, bool a_negative, bool b_negative)
 {
     if (!b)
@@ -285,8 +326,8 @@ bigint bigint::div(const bigint& a, const bigint& b, bool a_negative, bool b_neg
     bigint ret{ noinit_t{} };
     ret.mNumbers.resize(a.mNumbers.size());
     auto index = ret.mNumbers.size() - 1;
-    const auto end = a.mNumbers.crend();
-    for (auto iter = a.mNumbers.crbegin(); iter != end; ++iter) {
+    const auto it_end = a.mNumbers.crend();
+    for (auto iter = a.mNumbers.crbegin(); iter != it_end; ++iter) {
         current *= kMaxDigitsInNumber;
         current += *iter;
         std::uint32_t start = 0;
@@ -327,10 +368,12 @@ bool bigint::lt(const bigint& a, const bigint& b,bool a_negative,bool b_negative
 
     
     // void() to prevent overloading of comma operator :P
-    for (; it1 != end; ++it1, void(), ++it2)
-        if (*it1 != *it2)
-            return (*it1 < *it2) != a_negative;
-    
+    for (; it1 != end; ++it1, void(), ++it2) {
+        const auto x = *it1;
+        const auto y = *it2;
+        if (x != y)
+            return (x < y) != a_negative;
+    }
     return false;
 }
 bigint& bigint::half() & noexcept
@@ -342,15 +385,15 @@ bigint& bigint::half() & noexcept
     }
 
     bigint current{};  // current number in process of division
-    std::vector<number_type> res;
+    storage_type res;
     res.reserve(mNumbers.size());
 
-    const auto end = mNumbers.crend();
+    const auto it_end = mNumbers.crend();
     // 513 
     //   2
     // 256
 
-    for (auto iter = mNumbers.crbegin(); iter != end; ++iter) {
+    for (auto iter = mNumbers.crbegin(); iter != it_end; ++iter) {
         current *= kMaxDigitsInNumber;
         
         current += *iter;
@@ -374,6 +417,25 @@ bigint& bigint::half() & noexcept
     this->fix();
     return *this;
 }
+
+bigint& bigint::double_() & 
+{
+    number_type carry = 0;
+
+    const std::size_t size = mNumbers.size();
+    for (std::size_t i = 0; i < size; ++i) {
+        number_type sum = carry;
+        sum += 2 * mNumbers[i];
+        mNumbers[i] = sum % kMaxDigitsInNumber;
+        carry = sum / kMaxDigitsInNumber;
+    }
+    if (carry > 0)
+        mNumbers.push_back(carry);
+    return *this;
+}
+
+
+
 bigint bigint::rand(std::size_t num_digits /* = 1000 */)
 {
     if(num_digits == 0)
@@ -468,7 +530,7 @@ bigint zxshady::pow(bigint base, unsigned long long exponent)
     if (exponent == 1)
         return base;
 
-    const bool was_negative = exponent % 2 == 1&& base.is_negative();
+    const bool was_negative = exponent % 2 == 1 && base.is_negative();
     base.set_positive();
     const bigint mult = base;
     while (exponent > 1) {
@@ -493,14 +555,13 @@ bool zxshady::bigint::is_prime() const noexcept
     if (*this == static_cast<unsigned char>(2))
         return true;
 
-    if (is_negative() || is_even() || !*this || !(mod(*this, 3)))
+    if (is_negative() || is_even() || !*this || !(*this % static_cast<unsigned char>(3)))
         return false;
 
 
     bigint range = sqrt(*this);
-    const bigint six = (char)6;
-    for (bigint i = 5; i <= range; i += six)
-        if (!(*this % i) || !(*this % (i + 2)))
+    for (bigint i = 5; i <= range; i += static_cast<unsigned char>(6))
+        if (!(*this % i) || !(*this % (i + static_cast<unsigned char>(2))))
             return false;
     return true;
 }
@@ -531,7 +592,120 @@ bigint zxshady::lcm(const bigint& a, const bigint& b)
 }
 std::ostream& zxshady::operator<<(std::ostream& ostream, const zxshady::bigint& bigint)
 {
-    return ostream << bigint.to_string();
+
+    if (bigint.is_negative()) {
+        ostream << '-';
+    }
+    else if ((ostream.flags() & std::ios_base::showpos) != 0) {
+        if (bigint /* != 0 */)
+            ostream << '+';
+    }
+    const bool showbase = (ostream.flags() & std::ios_base::showbase) != 0;
+    const bool uppercase = (ostream.flags() & std::ios_base::uppercase) != 0;
+
+    std::ios_base::fmtflags base = ostream.flags() & ostream.basefield;
+    if ((base & std::ios_base::dec) != 0) {
+        auto iter = bigint.mNumbers.crbegin();
+        const auto end = bigint.mNumbers.crend();
+
+        int_into_stream(*iter, ostream);
+        ++iter;
+        for (; iter != end; ++iter) {
+            auto val = *iter;
+            auto cnt = zxshady::math::digit_count(val);
+            auto difference = bigint::kDigitCountOfMax - cnt;
+
+            static constexpr const char* zeroes[] = {
+                "",
+                "0",
+                "00",
+                "000",
+                "0000",
+                "00000",
+                "000000",
+                "0000000",
+                "00000000",
+                "000000000",
+                "0000000000",
+                "00000000000",
+                "000000000000",
+                "0000000000000",
+                "00000000000000",
+                "000000000000000",
+                "0000000000000000",
+                "00000000000000000",
+                "000000000000000000",
+                "0000000000000000000",
+                "00000000000000000000",
+                "000000000000000000000",
+                "0000000000000000000000",
+                "00000000000000000000000",
+                "000000000000000000000000"
+            };
+            assert(difference < sizeof(zeroes) / sizeof(zeroes[0]));
+            ostream << zeroes[difference];
+            int_into_stream(*iter, ostream);
+
+        }
+    }
+    else if ((base & std::ios_base::hex) != 0) {
+        
+        auto x = bigint;
+        std::size_t size = sizeof(bigint::number_type) * CHAR_BIT * bigint.mNumbers.size();
+        std::unique_ptr<char[]> buffer(new char[size]);
+        std::ptrdiff_t i = 0;
+        
+        if (showbase) {
+            ostream.put('0');
+            ostream.put(uppercase ? 'X' : 'x');
+        }
+
+        constexpr static char table_lower[] = {
+            '0','1','2','3','4','5','6','7',
+            '8','9','a','b','c','d','e','f'
+        };
+
+        constexpr static char table_upper[] = {
+            '0','1','2','3','4','5','6','7',
+            '8','9','A','B','C','D','E','F'
+        };
+        static_assert(sizeof(table_lower) == 16, "wrong size");
+        static_assert(sizeof(table_upper) == 16, "wrong size");
+        // 17
+        const auto& table = uppercase ? table_upper : table_lower;
+        do {
+
+            buffer[static_cast<std::size_t>(i)] = table[x.mNumbers[0] % 16];
+            i++;
+            x /= static_cast<unsigned char>(16);
+        } while (x);
+
+        for (; i > 0; --i) {
+            ostream.put(buffer[i-1]);
+        }
+    }
+    else if((base & std::ios_base::binary) != 0){
+        auto x = bigint;
+        std::unique_ptr<char[]> buffer(
+            new char[sizeof(bigint::number_type) * CHAR_BIT * bigint.mNumbers.size()]);
+        std::ptrdiff_t i = 0;
+
+        if (showbase) {
+            ostream.put('0');
+            ostream.put(uppercase ? 'B' : 'b');
+        }
+
+        do {
+            buffer[static_cast<std::size_t>(i)] = x.is_odd() + '0';
+            i++;
+            x.half();
+        } while (x);
+
+        for (; i > 0; --i) {
+            ostream.put(buffer[i-1]);
+        }
+    }
+    return ostream;
 }
 std::istream& zxshady::operator>>(std::istream& istream, zxshady::bigint& bigint)
 {

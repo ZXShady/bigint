@@ -8,19 +8,20 @@
 #include <type_traits>
 
 namespace zxshady {
-template<class T,typename std::enable_if<std::is_signed<T>::value,int>::type = 0>
+
+template<typename T,typename std::enable_if<std::is_signed<T>::value,int>::type = 0>
 constexpr bool is_negative(T t) noexcept
 {
     return t < 0;
 }
 
-template<class T,typename std::enable_if<std::is_unsigned<T>::value,int>::type = 0>
-constexpr bool is_negative(T t) noexcept
+template<typename T,typename std::enable_if<std::is_unsigned<T>::value,int>::type = 0>
+constexpr bool is_negative(T) noexcept
 {
     return false;
 }
 
-template<class T>
+template<typename T>
 constexpr bool is_positive(T t) noexcept
 {
     return !is_negative(t);
@@ -37,16 +38,28 @@ template<typename T>
         return cnt;
     }
 
-template<class T>
+template<typename T>
     constexpr T abs(T x) noexcept
     {
         return (is_negative(x)) ? (-x) : x;
     }
 
-    template<class T>
-    constexpr typename std::make_unsigned<T>::type unsigned_abs(T x) noexcept
+    template<typename MinimumType = unsigned char,typename T>
+    constexpr typename std::make_unsigned<
+        typename std::conditional<(sizeof(MinimumType) > sizeof(T)),
+            MinimumType,
+            T
+        >::type
+    >::type unsigned_abs(T x) noexcept
     {
-        return (x < 0) ? static_cast<typename std::make_unsigned<T>::type>(-1 * (x + 1)) + 1 : x;
+        return (x < 0) ? static_cast<
+            typename std::make_unsigned<
+                typename std::conditional<(sizeof(MinimumType) > sizeof(T)),
+                MinimumType,
+                T
+                >::type
+            >::type
+        >(-1 * (x + 1)) + 1 : x;
     }
 
     template<typename T>
@@ -89,15 +102,38 @@ template<class T>
         return mPow10Table[exponent];
     }
 
+    // 123
+    //
     template<typename Integral>
-    ZXSHADY_NODISCARD ZXSHADY_CONSTEXPR14 Integral nth_digit(Integral x,unsigned long long place,unsigned long long count = 1) noexcept
+    ZXSHADY_NODISCARD ZXSHADY_CONSTEXPR14 Integral get_nth_digit(Integral x,unsigned long long place,unsigned long long count = 1) noexcept
     {
         static_assert(std::is_integral<Integral>::value, "std::is_integral<Integral>::value");
-        return math::unsigned_abs(x) / math::pow10(math::digit_count(x) - place) % math::pow10(count);
+        return static_cast<Integral>((math::unsigned_abs(x) / math::pow10(place)) % math::pow10(count));
+    }
+    
+    template<typename Integral>
+    ZXSHADY_CONSTEXPR14 void set_nth_digit(Integral& x,int new_value,unsigned long long place) noexcept
+    {
+        assert(new_value >= 0 && new_value <= 9);
+        static_assert(std::is_integral<Integral>::value, "std::is_integral<Integral>::value");
+        auto digit = math::get_nth_digit(x, place);
+        x -= static_cast<Integral>(math::pow10(place) * digit);
+        x += static_cast<Integral>(math::pow10(place) * new_value);
     }
 
 
+    namespace details {
+    
+    constexpr std::size_t constexpr_log(unsigned long long x, std::size_t ret, std::size_t base = 10)
+    {
+        return x ? constexpr_log(x / base, ret + 1, base) : ret;
+    }
 
+    }
+    constexpr std::size_t constexpr_log(unsigned long long x,std::size_t base = 10) noexcept
+    {
+        return details::constexpr_log(x, 0, base) - 1;
+    }
     template<typename Ret = std::size_t, typename T>
     ZXSHADY_NODISCARD ZXSHADY_CONSTEXPR14 Ret log(T x,std::size_t base){
         if (x == 0)
@@ -113,7 +149,6 @@ template<class T>
         }
         return ret-1;
     }
-
 }
 
 }
