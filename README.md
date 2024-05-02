@@ -6,7 +6,7 @@
 
 # How to use it?
 ```c++
-#include "bigint/bigint.hpp"     // with proper file path and link bigint.cpp
+#include "zxshady/bigint/bigint.hpp"     // with proper file path and link bigint.cpp
 ```
 ---
 
@@ -35,6 +35,14 @@ bigint m{0} // is slower than two above
 bigint o{"0xDeAdBeEf"}; // 3735928559
 bigint p("0B1101"); // 13
 bigint q(static_cast<__int128>(1e30)); // extended integers
+
+str = "ff";
+bigint r(str.begin(),str.end(),bigint::base::hex)
+str = "1111'1110'0001";
+bigint r(str.begin(),str.end(),bigint::base::bin,'\'') // seperator
+str = "0xff'ff'ff'ff";
+bigint r(str.begin(),str.end(),'\'') // seperator
+bigint s("0o70"); // octal
 ```
 ---
 # avaible operators
@@ -102,20 +110,86 @@ a = +b; // DOES NOT DO abs(b) it just returns a copy...
 17. int signless_compare(const bigint& that) // same as above but compares as if they were abs(*this).compare(abs(that));
 // faster than using abs method
 18. void swap(bigint& that) noexcept; 
+19. bool signless_NAME(const bigint& that) // NAME could be lt,gt,lteq,gteq
+// compares as abs values
 ```
 
 # Static Functions
 ```cpp
     static bigint pow10(unsigned long long exponent); // gives bigint with [exponent] trailing zeroes
-    static bigint rand(std::size_t digits = 1000); // random bigint [with default = 1000] 
-    static bigint add(const bigint& a, const bigint& b); // same as operator+ but named for java programmers :P
-    static bigint sub(const bigint& a, const bigint& b); // same as operator- but named for java programmers :P
-    static bigint mul(const bigint& a, const bigint& b); // same as operator* but named for java programmers :P
-    static bigint div(const bigint& a, const bigint& b); // same as operator/ but named for java programmers :P
-    static bigint mod(const bigint& a, const bigint& b); // same as operator% but named for java programmers :P
+    static bigint rand(std::size_t digits = 1000); // random bigint [with default = 1000]
+```
+
+# IO Functions
+It can be formatted like any other integer e.g (print in hex ,show base ,show pos) etc.
+```cpp
+
+bigint value = 0xff;
+std::cout << std::oct << value; // 377
+std::cout << std::dec << std::showpos << value; // +255
+std::cout << std::hex << std::showbase << std::showpos << value; // +0xff
+std::cout << std::uppercase << value; // 0XFF
+
+bigint x;
+std::cin >> x; // enter a number
+std::cout << x; // output it!
+```
+
+---
+# Accessor Functions
+```
+bigint x = 123;
+// 3 is the first digit
+// 1 is the last digit
+std::cout << x.front(); // 3
+std::cout << x.back(); // 1
+
+// range-based for
+for(int digit : x) {
+    std::cout << digit << ' '; // prints 3 2 1
+}
+
+// iterators
+const auto end = x.end();
+for(auto iter = x.begin();iter != end;++iter) {
+    std::cout << *iter << ' '; // prints 3 2 1
+}
+// reverse iterators
+const auto rend = x.rend();
+for(auto iter = x.rbegin();iter != rend;++iter) {
+    *iter = 4;
+    std::cout << *iter << ' '; // prints 4 4 4
+}
+x = 123;
+// const-iterators
+const auto cend = x.cend();
+for(auto iter = x.cbegin();iter != cend;++iter) {
+    std::cout << *iter << ' '; // prints 3 2 1
+}
+// const-reverse iterators
+const auto crend = x.crend();
+for(auto iter = x.crbegin();iter != crend;++iter) {
+    std::cout << *iter << ' '; // prints 1 2 3
+}
+
+x = 100000;
+// note auto&& since this container act's like vector<bool>
+for(auto&& Value : x) {
+   Value = 5;
+}
+std::cout << x; // x = 55555
+
+x = 123;
+
+bigint::reference first = x[0]; // returns bigint::reference;
+// auto first = x[0]; // also works but i wouldnt recommend this since people might think it is a copy...
+// auto&& first = x[0]; // recommended or first version (bigint::reference); 
+first = 1;
+// x = 121
+
+
 
 ```
----
 
 # Overloaded Functions
 
@@ -138,36 +212,10 @@ std::ostream& operator<<(std::ostream& ostream, const bigint& bignum); // output
 std::istream& operator>>(std::istream& istream, bigint& bignum); // input operator
 
 ```
-#User Defined Literals
+# User Defined Literals
 ```cpp
-// literal constant functions useful if you want clear syntax while comparing against zero and some other functions
-// bigint a{2};
-// if(a == 0); // slow
-// if(!a) // fast
-// if(a == 0_c) // fast
-std::integral_constant<int,(value)> operator""_c();
-std::integral_constant<unsigned int,(value)> operator""_uc();
-std::integral_constant<long,(value)> operator""_lc();
-std::integral_constant<long long,(value)> operator""_llc();
-std::integral_constant<unsigned long,(value)> operator""_ulc();
-std::integral_constant<unsigned long long,(value)> operator""_ullc();
-// they are found in the inlined namespace const_literals
-// you can bring them with a using declartion
-void func() {
-  using zxshady::literals::const_literals;
-  bigint x{0};
-  if(x == 0_c)                             return;
-    harddrive.format();
-}
-
-
-bigint operator""_big(unsigned long long x); // equalivent to bigint(x);
-bigint operator""_big(const char* str,std::size_t len); // equalivent to bigint(str,str+len);
-// these operators live in bigint_literals inline namespace
-
-usage
 using namespace zxshady::literals::bigint_literals; // or zxshady::bigint_literals;
-bigint val = "120948190380984093810948190348813409813571980709795748758798"_big;
+auto val = "120948190380984093810948190348813409813571980709795748758798"_big;
 pow(100_big,10000);
 
 // to bring all of them at once use
@@ -199,7 +247,7 @@ if(12 != a) {
 
 # converting to integral types using to method
 ```c++
-const bigint x = 21982014;
+bigint x = 21982014;
 auto val = x.to<int>();// will throw std::range_error if cannot fit inside int;
 x.set_negative();
 // using unsigned types will just ignore the sign...
