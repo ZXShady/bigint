@@ -37,7 +37,7 @@ public:
         return *this;
     }
 
-    ZXSHADY_NODISCARD iterator operator++(int) &noexcept
+    ZXSHADY_NODISCARD iterator operator++(int) & noexcept
     {
         iterator copy = *this;
         ++(*this);
@@ -55,7 +55,7 @@ public:
         return *this;
     }
 
-    ZXSHADY_NODISCARD iterator operator--(int) noexcept
+    ZXSHADY_NODISCARD iterator operator--(int) & noexcept
     {
         iterator copy = *this;
         --(*this);
