@@ -649,7 +649,6 @@ std::ostream& zxshady::operator<<(std::ostream& ostream, const zxshady::bigint& 
         }
     }
     else if ((base & std::ios_base::hex) != 0) {
-        
         auto x = bigint;
         std::size_t size = sizeof(bigint::number_type) * CHAR_BIT * bigint.mNumbers.size();
         std::unique_ptr<char[]> buffer(new char[size]);
@@ -684,7 +683,31 @@ std::ostream& zxshady::operator<<(std::ostream& ostream, const zxshady::bigint& 
             ostream.put(buffer[i-1]);
         }
     }
-    else if((base & std::ios_base::binary) != 0){
+    else if ((base & std::ios_base::oct) != 0) {
+        auto x = bigint;
+        std::size_t size = (3 * bigint.digit_count())/2;
+        std::unique_ptr<char[]> buffer(new char[size]);
+        std::ptrdiff_t i = 0;
+
+        if (showbase) {
+            ostream.put('0');
+            ostream.put(uppercase ? 'O' : 'o');
+        }
+
+        do {
+
+            buffer[static_cast<std::size_t>(i)] = (x.mNumbers[0] % 8) + '0';
+            i++;
+            x /= static_cast<unsigned char>(8);
+        } while (x);
+
+        for (; i > 0; --i) {
+            ostream.put(buffer[i-1]);
+        }
+    }
+
+    /*
+    else if ((base & std::ios_base::binary) != 0) {
         auto x = bigint;
         std::unique_ptr<char[]> buffer(
             new char[sizeof(bigint::number_type) * CHAR_BIT * bigint.mNumbers.size()]);
@@ -705,6 +728,7 @@ std::ostream& zxshady::operator<<(std::ostream& ostream, const zxshady::bigint& 
             ostream.put(buffer[i-1]);
         }
     }
+    */
     return ostream;
 }
 std::istream& zxshady::operator>>(std::istream& istream, zxshady::bigint& bigint)
